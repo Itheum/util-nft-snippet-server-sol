@@ -20,6 +20,7 @@ export class AppController {
     return await this.appService.createMerkleTree();
   }
 
+  // http://localhost:3001/mintNft
   @Get('/mintNft')
   async mintNft() {
     return await this.appService.mintNft();
