@@ -10,7 +10,6 @@ import {
   mplTokenMetadata,
 } from '@metaplex-foundation/mpl-token-metadata';
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
-import mintAuthorityKey from '../key.json';
 import {
   MetadataArgsArgs,
   createTree,
@@ -24,6 +23,14 @@ import {
 import { PublicKey } from '@solana/web3.js';
 import { fromWeb3JsPublicKey } from '@metaplex-foundation/umi-web3js-adapters';
 import { dasApi } from '@metaplex-foundation/digital-asset-standard-api';
+
+// S: Update based on Mainnet vs Devnet ---->
+import UPDATE_AUTHORITY_KEY from '../devnet_wal_data_cnft_mint_authority.json';
+const SOL_PUBLIC_RPC = 'https://api.devnet.solana.com';
+
+// only needed for MintNFT
+const SOL_PRIVATE_RPC = 'https://devnet.helius-rpc.com/?api-key=';
+// E: Update based on Mainnet vs Devnet ---->
 
 @Injectable()
 export class AppService {
@@ -41,13 +48,11 @@ export class AppService {
   }
 
   async createCollection() {
-    const umi = createUmi('https://api.devnet.solana.com');
+    const umi = createUmi(SOL_PUBLIC_RPC);
     umi.use(mplTokenMetadata());
 
-    // devnet : 5QrQzQk5nnTJbBhdnwwwmQr94AQUkMEaZkDbU5HsvKMY
-    // https://explorer.solana.com/address/5QrQzQk5nnTJbBhdnwwwmQr94AQUkMEaZkDbU5HsvKMY?cluster=devnet
     const mintAuthorityWallet = umi.eddsa.createKeypairFromSecretKey(
-      new Uint8Array(mintAuthorityKey),
+      new Uint8Array(UPDATE_AUTHORITY_KEY),
     );
 
     umi.use(keypairIdentity(mintAuthorityWallet));
@@ -55,7 +60,7 @@ export class AppService {
     const collectionMint = generateSigner(umi);
 
     /*
-    URI samples:
+    S: URI samples (Older Ones) ---->
     Itheum Get Bitz Dev (old dummy collection we used)
     https://ipfs.io/ipfs/QmTBeJHejL9awc5RA3u7TGWNv9RyGi2KgQUfzzdZstyz3n/ 
     https://explorer.solana.com/address/6MgvQSDUU3Z2a5MQqPeStUyCo1AXrB8xJhyBc8YYH3uk?cluster=devnet
@@ -63,13 +68,23 @@ export class AppService {
     Itheum Data NFT-FT Solana G1 (official devnet data nft-ft collection)
     https://gateway.pinata.cloud/ipfs/QmRTgjwj58VJcuT4XjciFtsFZhoiPbDGzrTjVJ9Ar97hgS
     https://explorer.solana.com/address/6uXqBZLNdp3dT1wgJYHCXjCs36WWLThdQkKUeqdTT7ni?cluster=devnet
+    E: URI samples (Older Ones) ---->
+
+    Final DEVNET one --->
+    name: 'Itheum Data NFT-FT Solana G1',
+    uri: 'https://gateway.pinata.cloud/ipfs/QmRTgjwj58VJcuT4XjciFtsFZhoiPbDGzrTjVJ9Ar97hgS',
+
+    Final MAINNET one ---> (we moved storage to Arweave and remove FT and renamed to Gen 1 and also used symbol)
+    name: 'Itheum Data NFT Solana Gen 1',
+    uri: 'https://arweave.net/58iyqYSo7wGBtJhXNJc93epZC7HM9L-zYrCfoBsrCG0',
     */
 
     const resp = await createNft(umi, {
       mint: collectionMint,
-      name: 'Itheum Data NFT-FT Solana G1',
-      uri: 'https://gateway.pinata.cloud/ipfs/QmRTgjwj58VJcuT4XjciFtsFZhoiPbDGzrTjVJ9Ar97hgS',
-      sellerFeeBasisPoints: percentAmount(5), // 3%
+      name: 'xxx',
+      symbol: 'XXX',
+      uri: 'https://arweave.net/xxx',
+      sellerFeeBasisPoints: percentAmount(5), // 5%
       isCollection: true,
     }).sendAndConfirm(umi);
 
@@ -77,12 +92,12 @@ export class AppService {
   }
 
   async createMerkleTree() {
-    const umi = createUmi('https://api.devnet.solana.com');
+    const umi = createUmi(SOL_PUBLIC_RPC);
 
     umi.use(mplBubblegum());
 
     const mintAuthorityWallet = umi.eddsa.createKeypairFromSecretKey(
-      new Uint8Array(mintAuthorityKey),
+      new Uint8Array(UPDATE_AUTHORITY_KEY),
     );
 
     umi.use(keypairIdentity(mintAuthorityWallet));
@@ -112,12 +127,12 @@ export class AppService {
   }
 
   async mintNft() {
-    const umi = createUmi('https://devnet.helius-rpc.com/?api-key=');
+    const umi = createUmi(SOL_PRIVATE_RPC);
 
     umi.use(mplBubblegum());
 
     const mintAuthorityWallet = umi.eddsa.createKeypairFromSecretKey(
-      new Uint8Array(mintAuthorityKey),
+      new Uint8Array(UPDATE_AUTHORITY_KEY),
     );
 
     umi.use(keypairIdentity(mintAuthorityWallet));
@@ -141,6 +156,7 @@ export class AppService {
 
     MUSG3 - HachiCoffeeTunes
     https://gateway.pinata.cloud/ipfs/QmR8kWRdbFedJNUHV4Xez1tKMmuTgzsNaPdQJ4BgBJ6enJ
+
     */
 
     const metadata: MetadataArgsArgs = {
@@ -180,7 +196,7 @@ export class AppService {
   }
 
   async fetchNft() {
-    const umi = createUmi('https://api.devnet.solana.com');
+    const umi = createUmi(SOL_PUBLIC_RPC);
 
     umi.use(dasApi());
 
@@ -200,30 +216,37 @@ export class AppService {
   }
 
   async fetchNftsForAddress() {
-    const umi = createUmi('https://api.devnet.solana.com');
+    const umi = createUmi(SOL_PUBLIC_RPC);
     umi.use(dasApi());
+
     const mintAuthorityWallet = umi.eddsa.createKeypairFromSecretKey(
-      new Uint8Array(mintAuthorityKey),
+      new Uint8Array(UPDATE_AUTHORITY_KEY),
     );
+
     umi.use(keypairIdentity(mintAuthorityWallet));
 
     const owner = fromWeb3JsPublicKey(
       new PublicKey('At3pzpRWg4N3WSZoBZiNKLotzw4VHBSjLJVZejd3YXVL'),
     );
+
     const rpcAsset = await umi.rpc.getAssetsByOwner({ owner });
     return rpcAsset;
   }
 
   async transferNft() {
-    const umi = createUmi('https://api.devnet.solana.com');
+    const umi = createUmi(SOL_PUBLIC_RPC);
     umi.use(dasApi());
+
     const mintAuthorityWallet = umi.eddsa.createKeypairFromSecretKey(
-      new Uint8Array(mintAuthorityKey),
+      new Uint8Array(UPDATE_AUTHORITY_KEY),
     );
+
     umi.use(keypairIdentity(mintAuthorityWallet));
+
     const merkleTree = fromWeb3JsPublicKey(
       new PublicKey('6aZF3zzGosTmp9tzUpk8mP2e2E5GMCdnuT8wTbRQkVPt'),
     );
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [assetId, bump] = await findLeafAssetIdPda(umi, {
       merkleTree,
@@ -233,15 +256,18 @@ export class AppService {
     const owner = fromWeb3JsPublicKey(
       new PublicKey('7VrS7fu6ERH6kVhLi1ELffpB46LkGuU6qDkyJ73u9oHj'),
     );
+
     const newOwner = fromWeb3JsPublicKey(
       new PublicKey('At3pzpRWg4N3WSZoBZiNKLotzw4VHBSjLJVZejd3YXVL'),
     );
+
     const assetWithProof = await getAssetWithProof(umi, assetId);
     const resp = await transfer(umi, {
       ...assetWithProof,
       leafOwner: owner,
       newLeafOwner: newOwner,
     }).sendAndConfirm(umi);
+
     return resp;
   }
 }
